@@ -1,35 +1,38 @@
-# file: app.py
 import streamlit as st
 import pandas as pd
 import subprocess
 import os
+import datetime
 
 st.set_page_config(page_title="CryptoPricePrediction", layout="centered")
 
 # Title
-st.title("📊 CryptoPricePrediction — Daily XRP/CAD Forecast")
-st.write("Machine-learning forecast with sentiment and weekly outlook.")
+st.title("📊 CryptoPricePrediction — Tomorrow's XRP/CAD Forecast")
+st.write("Forecast updated daily — signals apply to **tomorrow's trading session**.")
 
-# Run your forecast script (when button clicked)
+# Run forecast
 if st.button("Run Forecast"):
     result = subprocess.run(["python", "xrp_cad_forecast.py"], capture_output=True, text=True)
     st.text(result.stdout)
 
-# Show latest log entry
+# Show latest forecast log
 if os.path.exists("xrp_cad_forecast_log.csv"):
     df = pd.read_csv("xrp_cad_forecast_log.csv")
     latest = df.tail(1)
 
-    st.subheader("🚦 Daily Signal")
-    st.metric(label="Trade Signal", value=latest["Trade_Signal"].values[0],
+    forecast_date = pd.to_datetime(latest["Date"].values[0])
+    tomorrow = forecast_date + pd.Timedelta(days=1)
+    st.markdown(f"📅 **Forecast generated on {forecast_date.date()} for {tomorrow.date()}**")
+
+    st.subheader("🚦 Tomorrow's Trade Signal")
+    st.metric(label="Signal", value=latest["Trade_Signal"].values[0],
               delta=latest["Signal_Reason"].values[0])
 
     st.subheader("📆 Weekly Trend")
     st.metric(label="Weekly Outlook", value=latest["Weekly_Trend"].values[0],
               delta=latest["Weekly_Reason"].values[0])
 
-    # Show Free 7-Day Forecast
-    st.subheader("📊 7-Day Forecast")
+    st.subheader("📊 Full 7-Day Forecast")
     cols = ["Forecast_Day1","Forecast_Day2","Forecast_Day3",
             "Forecast_Day4","Forecast_Day5","Forecast_Day6","Forecast_Day7"]
     forecast = latest[cols].values[0]
@@ -39,9 +42,7 @@ if os.path.exists("xrp_cad_forecast_log.csv"):
     })
     st.table(forecast_df)
 
-    # Tip: Later you can lock this section by wrapping in "if user_subscribed:" logic
-
-# Affiliate Section
+# Affiliate Links
 st.markdown("""
 ---
 ### 💰 Ready to Trade XRP/CAD?
