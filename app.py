@@ -1,10 +1,16 @@
 import streamlit as st
 import pandas as pd
 import datetime
-import matplotlib.pyplot as plt
 from xrp_cad_forecast import run_forecast
 
 st.set_page_config(page_title="CryptoPricePrediction", layout="centered")
+
+# ✅ SEO Meta Tags
+st.markdown("""
+<meta name="description" content="Free daily XRP price prediction and crypto forecast. Get tomorrow's XRP/CAD signals with AI-powered forecasts.">
+<meta name="keywords" content="XRP prediction, crypto prediction, XRP price forecast, crypto forecast, XRP CAD tomorrow, cryptocurrency signals">
+<meta name="robots" content="index, follow">
+""", unsafe_allow_html=True)
 
 # Title
 st.title("📊 CryptoPricePrediction — Tomorrow's XRP/CAD Forecast")
@@ -34,34 +40,6 @@ if st.button("Run Forecast"):
         "Predicted Price (CAD)": results["Forecast_7Day"]
     })
     st.table(forecast_df)
-
-    # Accuracy Chart — CSV always exists now
-    st.subheader("📈 Forecast Accuracy — Last 7 Days")
-
-    try:
-        df_log = pd.read_csv("xrp_cad_forecast_log.csv")
-        df_log["Date"] = pd.to_datetime(df_log["Date"], errors="coerce")
-        df_recent = df_log.tail(7)
-
-        if not df_recent.empty and "Actual_Close" in df_recent.columns:
-            plt.figure(figsize=(8, 4))
-            plt.plot(df_recent["Date"], df_recent["Actual_Close"], marker='o', label="Actual Price")
-            plt.plot(df_recent["Date"], df_recent["Final_Adj_Pred_Tomorrow"], marker='x', label="Predicted Price")
-            plt.title("XRP/CAD Forecast vs Actual — Last 7 Days")
-            plt.xlabel("Date")
-            plt.ylabel("Price (CAD)")
-            plt.legend()
-            plt.grid(True)
-            st.pyplot(plt)
-
-            # Show accuracy stats
-            mae = (df_recent["Final_Adj_Pred_Tomorrow"] - df_recent["Actual_Close"]).abs().mean()
-            st.write(f"📊 Mean Absolute Error (last 7 days): **{mae:.3f} CAD**")
-        else:
-            st.info("⚠️ Not enough forecast history yet — run the forecast daily to build accuracy data.")
-
-    except Exception as e:
-        st.info(f"⚠️ Accuracy chart unavailable: {e}")
 
 # Affiliate Links
 st.markdown("""
