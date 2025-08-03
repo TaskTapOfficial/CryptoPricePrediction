@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
-import subprocess
-import os
 import datetime
+import matplotlib.pyplot as plt
+from xrp_cad_forecast import run_forecast
 
 st.set_page_config(page_title="CryptoPricePrediction", layout="centered")
 
@@ -10,37 +10,52 @@ st.set_page_config(page_title="CryptoPricePrediction", layout="centered")
 st.title("📊 CryptoPricePrediction — Tomorrow's XRP/CAD Forecast")
 st.write("Forecast updated daily — signals apply to **tomorrow's trading session**.")
 
-# Run forecast
 if st.button("Run Forecast"):
-    result = subprocess.run(["python", "xrp_cad_forecast.py"], capture_output=True, text=True)
-    st.text(result.stdout)
+    results = run_forecast()
 
-# Show latest forecast log
-if os.path.exists("xrp_cad_forecast_log.csv"):
-    df = pd.read_csv("xrp_cad_forecast_log.csv")
-    latest = df.tail(1)
-
-    forecast_date = pd.to_datetime(latest["Date"].values[0])
+    # Show forecast date info
+    forecast_date = pd.to_datetime(results["Date"])
     tomorrow = forecast_date + pd.Timedelta(days=1)
     st.markdown(f"📅 **Forecast generated on {forecast_date.date()} for {tomorrow.date()}**")
 
+    # Daily Signal
     st.subheader("🚦 Tomorrow's Trade Signal")
-    st.metric(label="Signal", value=latest["Trade_Signal"].values[0],
-              delta=latest["Signal_Reason"].values[0])
+    st.metric(label="Signal", value=results["Trade_Signal"], delta=results["Signal_Reason"])
 
+    # Weekly Trend
     st.subheader("📆 Weekly Trend")
-    st.metric(label="Weekly Outlook", value=latest["Weekly_Trend"].values[0],
-              delta=latest["Weekly_Reason"].values[0])
+    st.metric(label="Weekly Outlook", value=results["Weekly_Trend"], delta=results["Weekly_Reason"])
 
+    # 7-Day Forecast
     st.subheader("📊 Full 7-Day Forecast")
-    cols = ["Forecast_Day1","Forecast_Day2","Forecast_Day3",
-            "Forecast_Day4","Forecast_Day5","Forecast_Day6","Forecast_Day7"]
-    forecast = latest[cols].values[0]
     forecast_df = pd.DataFrame({
         "Day": [f"Day {i+1}" for i in range(7)],
-        "Predicted Price (CAD)": forecast
+        "Predicted Price (CAD)": results["Forecast_7Day"]
     })
     st.table(forecast_df)
+
+    # Accuracy Chart (Last 7 Days)
+    st.subheader("📈 Forecast Accuracy — Last 7 Days")
+    try:
+        df_log = pd.read_csv("xrp_cad_forecast_log.csv")
+        df_log["Date"] = pd.to_datetime(df_log["Date"], errors="coerce")
+        df_recent = df_log.tail(7)
+
+        if not df_recent.empty:
+            plt.figure(figsize=(8, 4))
+            plt.plot(df_recent["Date"], df_recent["Actual_Close"], marker='o', label="Actual Price")
+            plt.plot(df_recent["Date"], df_recent["Final_Adj_Pred_Tomorrow"], marker='x', label="Predicted Price")
+            plt.title("XRP/CAD Forecast vs Actual — Last 7 Days")
+            plt.xlabel("Date")
+            plt.ylabel("Price (CAD)")
+            plt.legend()
+            plt.grid(True)
+            st.pyplot(plt)
+        else:
+            st.info("⚠️ Not enough data yet to show accuracy chart. Run the forecast for several days first.")
+
+    except Exception as e:
+        st.info(f"⚠️ Accuracy chart unavailable: {e}")
 
 # Affiliate Links
 st.markdown("""
