@@ -173,15 +173,20 @@ def run_forecast():
     }
 
     # Only log locally
-    if not os.environ.get("STREAMLIT_RUNTIME"):
-        log_file = "xrp_cad_forecast_log.csv"
-        log_entry = pd.DataFrame([results])
-        if os.path.exists(log_file):
+    # Log forecast (works locally and on Streamlit)
+    # Log forecast (auto-create CSV with headers if missing)
+    log_file = "xrp_cad_forecast_log.csv"
+    log_entry = pd.DataFrame([results])
+
+    try:
+        if not os.path.exists(log_file):
+            log_entry.to_csv(log_file, index=False)
+        else:
             existing_log = pd.read_csv(log_file)
             updated_log = pd.concat([existing_log, log_entry], ignore_index=True)
             updated_log.to_csv(log_file, index=False)
-        else:
-            log_entry.to_csv(log_file, index=False)
+    except Exception as e:
+        print(f"⚠️ Could not write to log file: {e}")
 
     return results
 

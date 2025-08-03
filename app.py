@@ -26,22 +26,24 @@ if st.button("Run Forecast"):
     st.subheader("📆 Weekly Trend")
     st.metric(label="Weekly Outlook", value=results["Weekly_Trend"], delta=results["Weekly_Reason"])
 
-    # 7-Day Forecast
+    # 7-Day Forecast with Real Dates
     st.subheader("📊 Full 7-Day Forecast")
+    forecast_dates = [(tomorrow + pd.Timedelta(days=i)).date() for i in range(7)]
     forecast_df = pd.DataFrame({
-        "Day": [f"Day {i+1}" for i in range(7)],
+        "Date": forecast_dates,
         "Predicted Price (CAD)": results["Forecast_7Day"]
     })
     st.table(forecast_df)
 
-    # Accuracy Chart (Last 7 Days)
+    # Accuracy Chart — CSV always exists now
     st.subheader("📈 Forecast Accuracy — Last 7 Days")
+
     try:
         df_log = pd.read_csv("xrp_cad_forecast_log.csv")
         df_log["Date"] = pd.to_datetime(df_log["Date"], errors="coerce")
         df_recent = df_log.tail(7)
 
-        if not df_recent.empty:
+        if not df_recent.empty and "Actual_Close" in df_recent.columns:
             plt.figure(figsize=(8, 4))
             plt.plot(df_recent["Date"], df_recent["Actual_Close"], marker='o', label="Actual Price")
             plt.plot(df_recent["Date"], df_recent["Final_Adj_Pred_Tomorrow"], marker='x', label="Predicted Price")
@@ -51,8 +53,12 @@ if st.button("Run Forecast"):
             plt.legend()
             plt.grid(True)
             st.pyplot(plt)
+
+            # Show accuracy stats
+            mae = (df_recent["Final_Adj_Pred_Tomorrow"] - df_recent["Actual_Close"]).abs().mean()
+            st.write(f"📊 Mean Absolute Error (last 7 days): **{mae:.3f} CAD**")
         else:
-            st.info("⚠️ Not enough data yet to show accuracy chart. Run the forecast for several days first.")
+            st.info("⚠️ Not enough forecast history yet — run the forecast daily to build accuracy data.")
 
     except Exception as e:
         st.info(f"⚠️ Accuracy chart unavailable: {e}")
