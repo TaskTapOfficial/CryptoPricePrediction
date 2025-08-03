@@ -1,0 +1,8 @@
+streamlit
+krakenex
+pandas
+numpy
+scikit-learn
+matplotlib
+ta
+requests
